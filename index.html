@@ -305,6 +305,7 @@ const state = {
   associados:[],
   pagamentos:{},
   lancamentos:[],
+  doacoes:[],
   config:{nomeAssociacao:NOME_ASSOC,mensalidade:MENSALIDADE_PADRAO},
   currentUser:null,
   view:'painel',
@@ -347,11 +348,10 @@ function toast(msg,tipo){ const root=document.getElementById('toast-root'); cons
 async function storageGet(key,fallback){ return await window.fbStorageGet(key,fallback); }
 async function storageSet(key,value){ return await window.fbStorageSet(key,value); }
 async function carregarTudo(){
-  const [associados,pagamentos,lancamentos]=await Promise.all([storageGet('iecis_associados',[]),storageGet('iecis_pagamentos',{}),storageGet('iecis_lancamentos',[])]);
-  state.associados=associados; state.pagamentos=pagamentos; state.lancamentos=lancamentos;
+  const [associados,pagamentos,lancamentos,doacoes]=await Promise.all([storageGet('iecis_associados',[]),storageGet('iecis_pagamentos',{}),storageGet('iecis_lancamentos',[]),storageGet('iecis_doacoes',[])]);
+  state.associados=associados; state.pagamentos=pagamentos; state.lancamentos=lancamentos; state.doacoes=doacoes;
 }
-const MAPA_ESTADO_LOCAL={iecis_associados:'associados',iecis_pagamentos:'pagamentos',iecis_lancamentos:'lancamentos'};
-function mesclarComEstadoLocal(key,doServidor){
+const MAPA_ESTADO_LOCAL={iecis_associados:'associados',iecis_pagamentos:'pagamentos',iecis_lancamentos:'lancamentos',iecis_doacoes:'doacoes'};function mesclarComEstadoLocal(key,doServidor){
   const propLocal=MAPA_ESTADO_LOCAL[key];
   const local=propLocal?state[propLocal]:null;
   if(!local) return doServidor;
@@ -403,6 +403,7 @@ const ICO={
   refresh:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 4v5h-5"/></svg>',
   plus:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
   caixa:'<svg class="empty-ico ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l2-4h14l2 4"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M3 8h18"/><path d="M9 12a3 3 0 0 0 6 0"/></svg>',
+  doacoes:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16l-1.4 9.3a1.2 1.2 0 0 1-1.2 1H6.6a1.2 1.2 0 0 1-1.2-1L4 10z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/><path d="M2 10h20"/></svg>',
 };
 
 /* GRÁFICOS */
@@ -447,7 +448,7 @@ function renderLogin(){
 }
 
 /* NAV */
-const NAV_ITEMS=[{id:'painel',label:'Painel',ico:'painel'},{id:'associados',label:'Associados',ico:'associados'},{id:'pagamentos',label:'Pagamentos',ico:'pagamentos'},{id:'fluxo',label:'Fluxo de caixa',ico:'fluxo'},{id:'config',label:'Configurações',ico:'config'}];
+const NAV_ITEMS=[{id:'painel',label:'Painel',ico:'painel'},{id:'associados',label:'Associados',ico:'associados'},{id:'pagamentos',label:'Pagamentos',ico:'pagamentos'},{id:'fluxo',label:'Fluxo de caixa',ico:'fluxo'},{id:'doacoes',label:'Doações',ico:'doacoes'},{id:'config',label:'Configurações',ico:'config'}];
 function renderNavItens(){ return NAV_ITEMS.map(i=>'<button type="button" class="nav-item'+(state.view===i.id?' active':'')+'" data-action="nav" data-view="'+i.id+'">'+ICO[i.ico]+'<span>'+i.label+'</span></button>').join(''); }
 function opcoesMeses(){ const ini=somaMes(mesAtualStr(),-24); const fim=somaMes(mesAtualStr(),3); return mesesEntre(ini,fim).map(m=>'<option value="'+m+'"'+(m===state.mesReferencia?' selected':'')+'>'+formatarMesLongo(m)+'</option>').join(''); }
 
@@ -478,7 +479,7 @@ function renderShell(){
     '</div>'+
   '</div>';
 }
-function renderView(){ switch(state.view){ case 'associados': return renderAssociados(); case 'pagamentos': return renderPagamentos(); case 'fluxo': return renderFluxo(); case 'config': return renderConfig(); default: return renderPainel(); } }
+function renderView(){ switch(state.view){ case 'associados': return renderAssociados(); case 'pagamentos': return renderPagamentos(); case 'fluxo': return renderFluxo(); case 'doacoes': return renderDoacoes(); case 'config': return renderConfig(); default: return renderPainel(); } }
 
 /* PAINEL */
 function renderPainel(){
@@ -617,7 +618,7 @@ function formPagamentoHTML(associadoId,mes){
 }
 
 /* FLUXO */
-const CATEGORIAS_SAIDA=['Material de limpeza','Manutenção','Conta de água','Conta de luz','Aluguel/Espaço','Evento','Material de escritório','Serviços/Prestador','Outros'];
+const CATEGORIAS_SAIDA=['Material de limpeza','Manutenção','Conta de água','Conta de luz','Conta de internet','Carreto','Aluguel/Espaço','Evento','Material de escritório','Serviços/Prestador','Outros'];
 const CATEGORIAS_ENTRADA=['Doação','Evento/Festa','Aluguel de espaço','Patrocínio','Outros'];
 function renderFluxo(){
   const lista=listaLancamentosCompleta();
@@ -641,10 +642,51 @@ function formLancamentoHTML(){
     '<div class="form-row"><label>Tipo<select name="tipo" id="lanc-tipo" required><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label>'+
     '<label>Valor (R$)<input name="valor" type="number" min="0" step="0.01" required></label></div>'+
     '<label>Categoria<select name="categoria" id="lanc-categoria">'+CATEGORIAS_ENTRADA.map(c=>'<option>'+c+'</option>').join('')+'</select></label>'+
-    '<label>Descrição<input name="descricao" required placeholder="Descreva o lançamento"></label>'+
+    '<label>Descrição (opcional)<input name="descricao" placeholder="Descreva o lançamento, se quiser"></label>'+
     '<label>Data<input name="data" type="date" required value="'+hojeStr()+'"></label>'+
   '</form>';
 }
+
+/* DOAÇÕES (Mesa Brasil / alimentos) */
+function renderDoacoes(){
+  const lista=(state.doacoes||[]).slice().sort((a,b)=>(b.dataDistribuicao||'').localeCompare(a.dataDistribuicao||''));
+  const totalPessoas=lista.reduce((s,d)=>s+Number(d.pessoasAtendidas||0),0);
+  const linhas=lista.map(d=>{
+    return '<tr><td>'+formatarData(d.dataDistribuicao)+'</td><td class="wrap-ok" style="max-width:220px">'+escapeHtml(d.descricao)+'</td><td>'+escapeHtml(d.quantidade)+'</td><td class="mono">'+escapeHtml(String(d.pessoasAtendidas||0))+'</td><td class="wrap-ok" style="max-width:200px">'+escapeHtml(d.observacoes||'—')+'</td><td class="col-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="editar-doacao" data-id="'+d.id+'">Editar</button> <button type="button" class="btn btn-danger btn-sm" data-action="excluir-doacao" data-id="'+d.id+'">Excluir</button></td></tr>';
+  }).join('');
+  return ''+
+  '<div class="section-head"><div><h2>Doações</h2><div class="section-sub">Doações de alimentos recebidas (ex: Mesa Brasil) e distribuição aos associados</div></div><button type="button" class="btn btn-primary" data-action="nova-doacao">'+ICO.plus+' Nova doação</button></div>'+
+  '<div class="stat-grid" style="margin-bottom:18px">'+statCard('Registros',lista.length,'')+statCard('Pessoas atendidas',totalPessoas,'total acumulado')+'</div>'+
+  (lista.length?'<div class="table-wrap"><table class="scroll-x"><thead><tr><th>Distribuição</th><th>Doação recebida</th><th>Quantidade</th><th>Pessoas</th><th>Observações</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
+    '<div class="card empty-state">'+ICO.caixa+'<div>Nenhuma doação registrada ainda.</div></div>');
+}
+function formDoacaoHTML(d){
+  d=d||{};
+  return '<form data-form="doacao" class="form-grid">'+
+    '<label>O que foi doado<input name="descricao" required placeholder="Ex: Cesta básica, arroz e feijão" value="'+escapeHtml(d.descricao||'')+'"></label>'+
+    '<div class="form-row"><label>Quantidade recebida<input name="quantidade" required placeholder="Ex: 20 cestas, 50 kg" value="'+escapeHtml(d.quantidade||'')+'"></label>'+
+    '<label>Pessoas atendidas<input name="pessoasAtendidas" type="number" min="0" step="1" required value="'+(d.pessoasAtendidas!=null?d.pessoasAtendidas:'')+'"></label></div>'+
+    '<label>Data da distribuição<input name="dataDistribuicao" type="date" required value="'+(d.dataDistribuicao||hojeStr())+'"></label>'+
+    '<label>Observações (opcional)<input name="observacoes" placeholder="Detalhes adicionais" value="'+escapeHtml(d.observacoes||'')+'"></label>'+
+  '</form>';
+}
+function abrirModalDoacao(id){
+  const d=id?(state.doacoes||[]).find(x=>x.id===id):null;
+  let html=formDoacaoHTML(d).replace('<form data-form="doacao"','<form id="form-doacao" data-form="doacao"'+(id?' data-edit-id="'+id+'"':''));
+  abrirModal('<div class="modal-header"><h3>'+(d?'Editar doação':'Nova doação')+'</h3><button type="button" class="modal-close" data-action="fechar-modal">&times;</button></div><div class="modal-body">'+html+'</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="fechar-modal">Cancelar</button><button type="submit" form="form-doacao" class="btn btn-primary">Salvar</button></div>');
+}
+async function onSubmitDoacao(form,fd){
+  const editId=form.dataset.editId||'';
+  const descricao=(fd.get('descricao')||'').trim();
+  const quantidade=(fd.get('quantidade')||'').trim();
+  const pessoasAtendidas=Number(fd.get('pessoasAtendidas')||0);
+  const dataDistribuicao=fd.get('dataDistribuicao');
+  const observacoes=(fd.get('observacoes')||'').trim();
+  const campos={descricao,quantidade,pessoasAtendidas,dataDistribuicao,observacoes};
+  const {dados}=await atualizarChave('iecis_doacoes',[],lista=>{ if(editId){ const i=lista.findIndex(x=>x.id===editId); if(i>-1) lista[i]={...lista[i],...campos}; }else{ lista.push({id:gerarId(),...campos,criadoEm:new Date().toISOString()}); } return lista; });
+  state.doacoes=dados; fecharModal(); toast(editId?'Doação atualizada.':'Doação registrada.','success'); renderApp();
+}
+function confirmarExcluirDoacao(id){ confirmarAcao('Excluir este registro de doação?',async()=>{ const {dados}=await atualizarChave('iecis_doacoes',[],l=>l.filter(x=>x.id!==id)); state.doacoes=dados; renderApp(); toast('Excluído.','success'); },{titulo:'Excluir doação',danger:true,textoConfirmar:'Excluir'}); }
 
 /* CONFIG */
 function renderConfig(){
@@ -748,13 +790,13 @@ async function onSubmitLancamento(form,fd){
 function confirmarExcluirLancamento(id){ confirmarAcao('Excluir este lançamento?',async()=>{ const fresco=await storageGet('iecis_lancamentos',[]); const nova=fresco.filter(x=>x.id!==id); await storageSet('iecis_lancamentos',nova); state.lancamentos=nova; renderApp(); toast('Excluído.','success'); },{titulo:'Excluir lançamento',danger:true,textoConfirmar:'Excluir'}); }
 async function onSubmitConfigMensalidade(form,fd){ const m=Number(fd.get('mensalidade')); state.config={...state.config,mensalidade:m}; await storageSet('iecis_config',state.config); toast('Mensalidade atualizada.','success'); renderApp(); }
 function exportarBackup(){
-  const bk={versao:1,exportadoEm:new Date().toISOString(),associados:state.associados,pagamentos:state.pagamentos,lancamentos:state.lancamentos};
+ const bk={versao:1,exportadoEm:new Date().toISOString(),associados:state.associados,pagamentos:state.pagamentos,lancamentos:state.lancamentos,doacoes:state.doacoes};
   const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='iecis-backup-'+hojeStr()+'.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); toast('Backup exportado.','success');
 }
 function onRestaurarBackup(file){
   confirmarAcao('Restaurar vai <strong>substituir todos os dados atuais</strong>. Não pode ser desfeito.',async()=>{
-    try{ const t=await file.text(); const d=JSON.parse(t); if(d.associados) await storageSet('iecis_associados',d.associados); if(d.pagamentos) await storageSet('iecis_pagamentos',d.pagamentos); if(d.lancamentos) await storageSet('iecis_lancamentos',d.lancamentos); await carregarTudo(); renderApp(); toast('Backup restaurado.','success'); }
+    try{ const t=await file.text(); const d=JSON.parse(t); if(d.associados) await storageSet('iecis_associados',d.associados); if(d.pagamentos) await storageSet('iecis_pagamentos',d.pagamentos); if(d.lancamentos) await storageSet('iecis_lancamentos',d.lancamentos); if(d.doacoes) await storageSet('iecis_doacoes',d.doacoes); await carregarTudo(); renderApp(); toast('Backup restaurado.','success'); }
     catch(e){ toast('Não foi possível ler o arquivo.','error'); }
   },{titulo:'Restaurar backup',danger:true,textoConfirmar:'Substituir dados'});
 }
@@ -791,6 +833,9 @@ async function onGlobalClick(e){
       case 'desfazer-pagamento': confirmarDesfazerPagamento(id,btn.dataset.mes,btn.dataset.origem==='carne'); break;
       case 'novo-lancamento': abrirModalLancamento(); break;
       case 'excluir-lancamento': confirmarExcluirLancamento(id); break;
+      case 'nova-doacao': abrirModalDoacao(); break;
+      case 'editar-doacao': fecharModal(); setTimeout(()=>abrirModalDoacao(id),50); break;
+      case 'excluir-doacao': confirmarExcluirDoacao(id); break;
       case 'exportar-backup': exportarBackup(); break;
     }
   }catch(err){console.error(err);toast('Erro inesperado.','error');}
@@ -804,6 +849,7 @@ async function onGlobalSubmit(e){
       case 'associado': await onSubmitAssociado(form,fd); break;
       case 'pagamento': await onSubmitPagamento(form,fd); break;
       case 'lancamento': await onSubmitLancamento(form,fd); break;
+      case 'doacao': await onSubmitDoacao(form,fd); break;
       case 'config-mensalidade': await onSubmitConfigMensalidade(form,fd); break;
     }
   }catch(err){console.error(err);toast('Erro ao salvar.','error');}
