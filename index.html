@@ -226,6 +226,64 @@ td.wrap-ok,th.wrap-ok{white-space:normal;}
 .carne-undo:hover{color:var(--saida);}
 .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--ink-soft);font-weight:700;}
 .legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;}
+/* RESPONSIVIDADE PARA CELULAR */
+@media (max-width:480px){
+  .content{padding:14px 12px 40px;}
+  .topbar{padding:10px 12px;gap:10px;}
+  .topbar-title{font-size:17px;}
+  .section-head h2{font-size:21px;}
+  .section-sub{font-size:12px;}
+  .form-row{flex-direction:column;gap:14px;}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-card{padding:14px 14px;}
+  .stat-card .value{font-size:22px;}
+  .modal-overlay{padding:10px;}
+  .modal-header,.modal-footer{padding:14px 16px;}
+  .modal-body{padding:16px;}
+  .modal-footer{flex-wrap:wrap;}
+  .carne-grid{grid-template-columns:repeat(3,1fr);gap:8px;}
+  .carne-cell{min-height:84px;padding:8px 4px 10px;}
+  .auth-card{padding:30px 20px;}
+  .login-shape{display:none;}
+  .search-input{min-width:0;width:100%;}
+  .table-toolbar{flex-direction:column;align-items:stretch;}
+}
+/* TABELAS EM FORMATO DE CARTÃO NO CELULAR */
+@media (max-width:600px){
+  .table-wrap table.scroll-x{display:block;}
+  .table-wrap table.scroll-x thead{display:none;}
+  .table-wrap table.scroll-x tbody{display:block;}
+  .table-wrap table.scroll-x tr{display:block;background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:14px 16px 4px;margin-bottom:12px;}
+  .table-wrap table.scroll-x td{display:block;padding:0 0 12px;border:none;white-space:normal;text-align:left;}
+  .table-wrap table.scroll-x td::before{content:"";display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);margin-bottom:2px;}
+  .table-wrap table.scroll-x td.col-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:2px solid var(--surface-2);margin-top:2px;}
+  .table-wrap table.scroll-x td.col-actions::before{display:none;}
+
+  .table-associados td:nth-child(1)::before{content:"Nome";}
+  .table-associados td:nth-child(2)::before{content:"CPF";}
+  .table-associados td:nth-child(3)::before{content:"Telefone";}
+  .table-associados td:nth-child(4)::before{content:"Endereço";}
+  .table-associados td:nth-child(5)::before{content:"Status";}
+  .table-associados td:nth-child(6)::before{content:"Mensalidades";}
+
+  .table-pagamentos td:nth-child(1)::before{content:"Nome";}
+  .table-pagamentos td:nth-child(2)::before{content:"Status";}
+  .table-pagamentos td:nth-child(3)::before{content:"Valor";}
+  .table-pagamentos td:nth-child(4)::before{content:"Data";}
+  .table-pagamentos td:nth-child(5)::before{content:"Forma";}
+
+  .table-fluxo td:nth-child(1)::before{content:"Data";}
+  .table-fluxo td:nth-child(2)::before{content:"Tipo";}
+  .table-fluxo td:nth-child(3)::before{content:"Categoria";}
+  .table-fluxo td:nth-child(4)::before{content:"Descrição";}
+  .table-fluxo td:nth-child(5)::before{content:"Valor";}
+
+  .table-doacoes td:nth-child(1)::before{content:"Distribuição";}
+  .table-doacoes td:nth-child(2)::before{content:"Doação recebida";}
+  .table-doacoes td:nth-child(3)::before{content:"Quantidade";}
+  .table-doacoes td:nth-child(4)::before{content:"Pessoas";}
+  .table-doacoes td:nth-child(5)::before{content:"Observações";}
+}
 </style>
 </head>
 <body>
@@ -553,7 +611,7 @@ function renderAssociados(){
       '<option value="todos"'+(state.filtroStatus==='todos'?' selected':'')+'>Todos</option>'+
     '</select>'+
   '</div>'+
-  (lista.length?'<div class="table-wrap"><table class="scroll-x"><thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Endereço</th><th>Status</th><th>Mensalidades</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
+ (lista.length?'<div class="table-wrap table-associados"><table class="scroll-x"><thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Endereço</th><th>Status</th><th>Mensalidades</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
     '<div class="card empty-state">'+ICO.caixa+'<div>Nenhum associado encontrado.</div></div>');
 }
 function formAssociadoHTML(a){
@@ -582,7 +640,7 @@ function renderPagamentos(){
   }).join('');
   return ''+
   '<div class="section-head"><div><h2>Pagamentos</h2><div class="section-sub">'+formatarMesLongo(mes)+' • '+pagos+' de '+obrigados.length+' em dia</div></div></div>'+
-  (obrigados.length?'<div class="table-wrap"><table class="scroll-x"><thead><tr><th>Nome</th><th>Status</th><th>Valor</th><th>Data</th><th>Forma</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
+  (obrigados.length?'<div class="table-wrap table-pagamentos"><table class="scroll-x"><thead><tr><th>Nome</th><th>Status</th><th>Valor</th><th>Data</th><th>Forma</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
     '<div class="card empty-state">'+ICO.caixa+'<div>Nenhum associado a pagar neste mês.</div></div>');
 }
 
@@ -634,7 +692,7 @@ function renderFluxo(){
   '<div class="section-head"><div><h2>Fluxo de caixa</h2><div class="section-sub">Entradas e saídas financeiras do IECIS</div></div><button type="button" class="btn btn-primary" data-action="novo-lancamento">'+ICO.plus+' Novo lançamento</button></div>'+
   '<div class="table-toolbar"><select data-bind="filtroFluxoPeriodo"><option value="mes"'+(state.filtroFluxoPeriodo==='mes'?' selected':'')+'>Mês de referência ('+formatarMes(state.mesReferencia)+')</option><option value="todos"'+(state.filtroFluxoPeriodo==='todos'?' selected':'')+'>Todo o histórico</option></select></div>'+
   '<div class="stat-grid" style="margin-bottom:18px">'+statCard('Entradas',formatarMoeda(totais.entradas),'','entrada')+statCard('Saídas',formatarMoeda(totais.saidas),'','saida')+statCard('Saldo',formatarMoeda(totais.saldo),'',totais.saldo>=0?'entrada':'saida')+'</div>'+
-  (totais.itens.length?'<div class="table-wrap"><table class="scroll-x"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th class="right">Valor</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
+  (totais.itens.length?'<div class="table-wrap table-fluxo"><table class="scroll-x"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th class="right">Valor</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
     '<div class="card empty-state">'+ICO.caixa+'<div>Nenhum lançamento neste período.</div></div>');
 }
 function formLancamentoHTML(){
@@ -657,7 +715,7 @@ function renderDoacoes(){
   return ''+
   '<div class="section-head"><div><h2>Doações</h2><div class="section-sub">Doações de alimentos recebidas (ex: Mesa Brasil) e distribuição aos associados</div></div><button type="button" class="btn btn-primary" data-action="nova-doacao">'+ICO.plus+' Nova doação</button></div>'+
   '<div class="stat-grid" style="margin-bottom:18px">'+statCard('Registros',lista.length,'')+statCard('Pessoas atendidas',totalPessoas,'total acumulado')+'</div>'+
-  (lista.length?'<div class="table-wrap"><table class="scroll-x"><thead><tr><th>Distribuição</th><th>Doação recebida</th><th>Quantidade</th><th>Pessoas</th><th>Observações</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
+  (lista.length?'<div class="table-wrap table-doacoes"><table class="scroll-x"><thead><tr><th>Distribuição</th><th>Doação recebida</th><th>Quantidade</th><th>Pessoas</th><th>Observações</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table></div>':
     '<div class="card empty-state">'+ICO.caixa+'<div>Nenhuma doação registrada ainda.</div></div>');
 }
 function formDoacaoHTML(d){
